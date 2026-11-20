@@ -1,0 +1,77 @@
+services:
+  api:
+    build:
+      context: .
+      target: api
+    environment:
+      API_PORT: "3000"
+      REDIS_ADDRESS: redis:6379
+      MONGODB_URL: mongodb
+      MONGODB_USER: ${MONGODB_USER:-go-template}
+      MONGODB_PASSWORD: ${MONGODB_PASSWORD:-GoTemplateLocalMongo_2026!Strong}
+      MONGODB_ARGS: ${MONGODB_ARGS:-authSource=admin}
+      MONGODB_DATABASE: ${MONGODB_DATABASE:-go-template}
+      MONGODB_PORT: "27017"
+      MONGODB_SERVER_SELECTION_TIMEOUT_SECONDS: ${MONGODB_SERVER_SELECTION_TIMEOUT_SECONDS:-3}
+      MONGODB_PING_TIMEOUT_SECONDS: ${MONGODB_PING_TIMEOUT_SECONDS:-3}
+      AZURE_SERVICEBUS_CONNECTION_STRING: "Endpoint=sb://servicebus-emulator;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;"
+    ports: ["3000:3000"]
+    depends_on: [redis, mongodb, servicebus-emulator]
+    networks: [template]
+  redis:
+    image: redis:7-alpine
+    networks: [template]
+  mongodb:
+    image: mongo:8
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USER:-go-template}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD:-GoTemplateLocalMongo_2026!Strong}
+    volumes: ["mongodb-data:/data/db"]
+    networks: [template]
+  servicebus-emulator:
+    platform: linux/amd64
+    image: mcr.microsoft.com/azure-messaging/servicebus-emulator:latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "GoTemplateLocalSql_2026!Strong"
+      SQL_SERVER: sqlserver
+    depends_on: [sqlserver]
+    ports: ["5672:5672", "5300:5300"]
+    volumes: ["./docker/servicebus/config.json:/ServiceBus_Emulator/ConfigFiles/Config.json:ro"]
+    networks: [template]
+  sqlserver:
+    platform: linux/amd64
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "GoTemplateLocalSql_2026!Strong"
+    networks: [template]
+  worker-topic:
+    profiles: [broker]
+    build:
+      context: .
+      target: worker-topic
+    environment:
+      AZURE_SERVICEBUS_CONNECTION_STRING: "Endpoint=sb://servicebus-emulator;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;"
+    depends_on: [servicebus-emulator]
+    networks: [template]
+  worker-example:
+    profiles: [worker]
+    build:
+      context: .
+      target: worker-example
+    restart: "no"
+  worker-queue:
+    profiles: [broker]
+    build:
+      context: .
+      target: worker-queue
+    environment:
+      AZURE_SERVICEBUS_CONNECTION_STRING: "Endpoint=sb://servicebus-emulator;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;"
+    depends_on: [servicebus-emulator]
+    networks: [template]
+networks:
+  template:
+    name: go-template-network
+volumes:
+  mongodb-data:

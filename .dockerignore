@@ -1,0 +1,30 @@
+.git
+.gitignore
+.env*
+
+# Editor and OS files
+.idea
+.vscode
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Compiled binaries
+*.exe
+*.out
+*.test
+bin/
+dist/
+
+# Coverage and temporary files
+coverage/
+*.coverprofile
+tmp/
+temp/
+*.tmp
+*.log
+
+# Local container and build output
+Dockerfile*
+docker-compose*.yml

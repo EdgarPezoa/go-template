@@ -1,0 +1,14 @@
+{
+  "UserConfig": {
+    "Logging": {
+      "Type": "File"
+    },
+    "Namespaces": [
+      {
+        "Name": "sbemulatorns",
+        "Queues": [{ "Name": "go-template-messages" }],
+        "Topics": [{ "Name": "go-template-events", "Subscriptions": [{ "Name": "go-template-worker" }] }]
+      }
+    ]
+  }
+}
